@@ -25,6 +25,9 @@ export default function Home() {
 	const [count, setCount] = useState<number>(1);
 
 	const [offensiveAttackGroups, setOffensiveAttackGroups] = useState<Record<number, Unit[]>>({});
+	const [defensiveDefenseGroups, setDefensiveDefenseGroups] = useState<Record<number, Unit[]>>({});
+
+	const [diceRolls, setDiceRolls] = useState<number[]>([]);
 
 
 	function addUnit() {
@@ -85,6 +88,7 @@ export default function Home() {
 		console.log("Defensive Group", defensiveDefenseGroups);
 
 		setOffensiveAttackGroups(offensiveAttackGroups);
+		setDefensiveDefenseGroups(defensiveDefenseGroups);
 	}
 
 	function takeCasualtyHits() {
@@ -94,6 +98,8 @@ export default function Home() {
 	function clearUnits() {
 		setDefensiveUnits([]);
 		setOffensiveUnits([]);
+		setOffensiveAttackGroups({});
+		setDefensiveDefenseGroups({});
 	}
 
 	function incrementCount() {
@@ -106,6 +112,17 @@ export default function Home() {
 		}
 	}
 
+	function rollDice(numberOfDice: number): number[] {
+		const newDiceRolls = [];
+
+		for (let i = 0; i < numberOfDice; i++) {
+			const roll = Math.floor(Math.random() * 6) + 1;
+			newDiceRolls.push(roll)
+		}
+
+		setDiceRolls(newDiceRolls);
+		return newDiceRolls;
+	}
 
 	return (
 		<main className="">
@@ -172,51 +189,62 @@ export default function Home() {
 					</button>
 				</div>
 
-				<div className="mx-8 text-xl my-2 text-white">
-					<h2 className="text-red-400">Offensive Units:</h2>
-					<ul>
-						{offensiveUnits.map((unit, index) => (
-							<li key={index}>{`${unit.name} x ${unit.count}`}</li>
-						))}
-					</ul>
+				<div className="flex justify-center">
+					<div className="mx-12 text-lg text-white">
+						<h2 className="text-red-400 text-2xl">Offensive Units:</h2>
+						<ul>
+							{offensiveUnits.map((unit, index) => (
+								<li key={index}>{`${unit.name} x ${unit.count}`}</li>
+							))}
+						</ul>
+					</div>
+
+					<div className="mx-12 text-lg text-white">
+						<h2 className="text-green-400 text-2xl">Defensive Units:</h2>
+						<ul>
+							{defensiveUnits.map((unit, index) => (
+								<li key={index}>{`${unit.name} x ${unit.count}`}</li>
+							))}
+						</ul>
+					</div>
 				</div>
 
-				<div className="mx-8 text-xl mt-8 text-white">
-					<h2 className="text-green-400">Defensive Units:</h2>
-					<ul>
-						{defensiveUnits.map((unit, index) => (
-							<li key={index}>{`${unit.name} x ${unit.count}`}</li>
-						))}
-					</ul>
-				</div>
-
-				<div className="grid grid-cols-4 gap-4 mx-8 my-24">
+				{/* BattleZone */}
+				<div className="grid grid-cols-4 gap-4 mx-8 mt-24">
 					{[1, 2, 3, 4].map(attackValue => (
-						<div
-							key={attackValue}
-							className="bg-gray-900 p-4 rounded-md text-white text-center"
-						>
-							<h3 className="text-lg font-bold">{attackValue}</h3>
+						<div key={attackValue} className="bg-gray-900 p-4 rounded-md text-white text-center">
+							<div className="flex justify-center mb-2 pb-2 border-b border-yellow-500">
+								{offensiveAttackGroups[attackValue] ? (
+									offensiveAttackGroups[attackValue].map((unit, index) => (
+										<div key={index} className="mx-2 text-red-300 text-lg">
+											{`${unit.name} x ${unit.count}`}
+										</div>
+									))
+								) : (
+									<div className="text-gray-500">No units</div>
+								)}
+							</div>
+							<h3 className="text-2xl font-bold mt-2">{attackValue}</h3>
+							<div className="flex justify-center mt-2 border-t pt-2 border-yellow-500">
+								{defensiveDefenseGroups[attackValue] ? (
+									defensiveDefenseGroups[attackValue].map((unit, index) => (
+										<div key={index} className="mx-2 text-green-300 text-lg">
+											{`${unit.name} x ${unit.count}`}
+										</div>
+									))
+								) : (
+									<div className="text-gray-500">No units</div>
+								)}
+							</div>
 						</div>
 					))}
 				</div>
 
-				<div className="mx-8 mt-8 text-white">
-					<h2 className="text-red-400 text-xl">Offensive Units by Attack Groups:</h2>
+				<div className="flex justify-center mt-12">
 					<div>
-						{Object.entries(offensiveAttackGroups).map(([attackValue, units]) => (
-							<div key={attackValue} className="my-4">
-								<h3 className="text-lg font-bold text-slate-300">Attack Power: {attackValue}</h3>
-								<ul className="ml-4">
-									{units.map((unit, index) => (
-										<li key={index}>{`${unit.name} x ${unit.count}`}</li>
-									))}
-								</ul>
-							</div>
-						))}
+						<button className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice</button>
 					</div>
 				</div>
-
 			</div>
 		</main>
 	);
