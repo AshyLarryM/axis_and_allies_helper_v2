@@ -31,6 +31,10 @@ export default function Home() {
 	const [defensiveDefenseGroups, setDefensiveDefenseGroups] = useState<Record<number, Unit[]>>({});
 
 	const [diceRolls, setDiceRolls] = useState<number[]>([]);
+	const [hits, setHits] = useState<number>(0);
+
+	const [isOffensivePhase, setIsOffensivePhase] = useState<boolean>(true);
+	// const [isDefensivePhase, setIsDefensivePhase] = useState<boolean>(false);
 
 
 	function addUnit() {
@@ -107,58 +111,80 @@ export default function Home() {
 	}
 
 	const attackedGroups: Set<number> = new Set();
-	
+
 	function attack() {
 		if (!Object.keys(offensiveAttackGroups).length) {
 			console.log("No Offensive Units available for attack");
 			return;
 		}
 
-		// If this is the first attack, find the highest attack value group
-		if (currentAttackValue === null) {
+		if (currentAttackValue === null) { // check for first attack (currentAttackValue(null)) if not then start with highestAttackValue
 			const highestAttackValue = Math.max(...Object.keys(offensiveAttackGroups).map(Number));
 			setCurrentAttackValue(highestAttackValue);
-			attackGroup(highestAttackValue);
-		} else {
-			// Find the next highest attack value group that hasn't attacked yet
-			const availableAttackValues = Object.keys(offensiveAttackGroups)
+			attackWithGroup(highestAttackValue);
+		}
+
+		else {
+			const availableAttackValues = Object.keys(offensiveAttackGroups) // Find the next highest attack value group that hasn't attacked yet
 				.map(Number)
 				.filter(attackValue => !attackedGroups.has(attackValue) && attackValue < currentAttackValue);
 
 			if (availableAttackValues.length) {
 				const nextHighestAttackValue = Math.max(...availableAttackValues);
-				setCurrentAttackValue(nextHighestAttackValue);
-				attackGroup(nextHighestAttackValue);
-			} else {
-				console.log("All attack groups have already attacked!");
-				setCurrentAttackValue(null);
+
+				if (availableAttackValues.length === 1) {
+					attackWithGroup(nextHighestAttackValue);
+					console.log("All attack groups have already attacked!");
+					setIsOffensivePhase(false);
+					setCurrentAttackValue(null);
+
+					// if (hits >= defensiveDefenseGroups.length) {
+
+					// }
+				} else {
+					setCurrentAttackValue(nextHighestAttackValue);
+					attackWithGroup(nextHighestAttackValue);
+				}
 			}
 		}
 	}
 
-	function attackGroup(attackValue: number) {
+	function attackWithGroup(attackValue: number) {
 		const attackGroup = offensiveAttackGroups[attackValue];
-	
+
 		if (attackGroup) {
 			const totalUnits = attackGroup.reduce((total, unit) => total + unit.count, 0);
 			const diceRolls = rollDice(totalUnits);
-	
+
+			let newHits = 0;
+			diceRolls.forEach(roll => {
+				if (roll <= attackValue) {
+					newHits++;
+				}
+			});
+
+			setHits(prevHits => prevHits + newHits);
+
 			setGroupsAttacked(prev => {
 				const updatedSet = new Set(prev);
 				updatedSet.add(attackValue);
 				return updatedSet;
 			});
-	
+
 			console.log(`Rolling ${totalUnits} dice for attack group with attack value of ${attackValue}:`);
 			console.log("Dice Rolls:", diceRolls);
 		} else {
 			console.log(`No units available for attack value: ${attackValue}`);
 		}
 	}
+
+	function assignHitToUnit(attackValue: number, unitIndex: number) {
+		
+	}
 	
 
-	function takeCasualtyHits() {
 
+	function assignHitsToCasualties() {
 	}
 
 	function clearUnits() {
@@ -166,6 +192,11 @@ export default function Home() {
 		setOffensiveUnits([]);
 		setOffensiveAttackGroups({});
 		setDefensiveDefenseGroups({});
+		setGroupsAttacked(new Set());
+		setHits(0);
+		setIsOffensivePhase(true);
+
+		console.log("cleared state")
 	}
 
 	function incrementCount() {
@@ -263,6 +294,9 @@ export default function Home() {
 							))}
 						</ul>
 					</div>
+					<div className="mt-4 text-white text-xl">
+						<h2>Total Hits: {hits}</h2>
+					</div>
 				</div>
 
 				{/* BattleZone */}
@@ -284,7 +318,11 @@ export default function Home() {
 							<div className="flex justify-center mt-2 border-t pt-2 border-yellow-500">
 								{defensiveDefenseGroups[attackValue] ? (
 									defensiveDefenseGroups[attackValue].map((unit, index) => (
-										<div key={index} className="mx-2 text-green-300 text-lg">
+										<div
+											key={index}
+											className={`mx-2 text-green-300 text-lg ${hits > 0 ? 'cursor-pointer' : ''}`}
+											onClick={() => assignHitToUnit(attackValue, index)}
+										>
 											{`${unit.name} x ${unit.count}`}
 										</div>
 									))
@@ -298,7 +336,19 @@ export default function Home() {
 
 				<div className="flex justify-center mt-12">
 					<div>
-						<button onClick={attack} className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice and Attack</button>
+						{isOffensivePhase ? (
+							<button onClick={attack} className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice and Attack</button>
+						) : (
+							<button onClick={assignHitsToCasualties} className="text-white text-xl bg-red-700 px-4 py-2 rounded-md">
+								Assign Hits to Casualties
+							</button>
+						)}
+					</div>
+				</div>
+
+				<div className="flex justify-center mt-16">
+					<div>
+						<h3 className="text-xl text-white font-semibold">Casualty Zone</h3>
 					</div>
 				</div>
 			</div>
