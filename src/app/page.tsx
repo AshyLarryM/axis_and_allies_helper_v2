@@ -19,6 +19,9 @@ export default function Home() {
 	const [offensiveUnits, setOffensiveUnits] = useState<Unit[]>([]);
 	const [defensiveUnits, setDefensiveUnits] = useState<Unit[]>([]);
 
+	const [groupsAttacked, setGroupsAttacked] = useState<Set<number>>(new Set());
+	const [currentAttackValue, setCurrentAttackValue] = useState<number | null>(null);
+
 	const [selectedUnit, setSelectedUnit] = useState<UnitName>("Infantry");
 	const [position, setPosition] = useState<Position>("offensive");
 
@@ -91,6 +94,69 @@ export default function Home() {
 		setDefensiveDefenseGroups(defensiveDefenseGroups);
 	}
 
+	function rollDice(numberOfDice: number): number[] {
+		const newDiceRolls = [];
+
+		for (let i = 0; i < numberOfDice; i++) {
+			const roll = Math.floor(Math.random() * 6) + 1;
+			newDiceRolls.push(roll)
+		}
+
+		setDiceRolls(newDiceRolls);
+		return newDiceRolls;
+	}
+
+	const attackedGroups: Set<number> = new Set();
+	
+	function attack() {
+		if (!Object.keys(offensiveAttackGroups).length) {
+			console.log("No Offensive Units available for attack");
+			return;
+		}
+
+		// If this is the first attack, find the highest attack value group
+		if (currentAttackValue === null) {
+			const highestAttackValue = Math.max(...Object.keys(offensiveAttackGroups).map(Number));
+			setCurrentAttackValue(highestAttackValue);
+			attackGroup(highestAttackValue);
+		} else {
+			// Find the next highest attack value group that hasn't attacked yet
+			const availableAttackValues = Object.keys(offensiveAttackGroups)
+				.map(Number)
+				.filter(attackValue => !attackedGroups.has(attackValue) && attackValue < currentAttackValue);
+
+			if (availableAttackValues.length) {
+				const nextHighestAttackValue = Math.max(...availableAttackValues);
+				setCurrentAttackValue(nextHighestAttackValue);
+				attackGroup(nextHighestAttackValue);
+			} else {
+				console.log("All attack groups have already attacked!");
+				setCurrentAttackValue(null);
+			}
+		}
+	}
+
+	function attackGroup(attackValue: number) {
+		const attackGroup = offensiveAttackGroups[attackValue];
+	
+		if (attackGroup) {
+			const totalUnits = attackGroup.reduce((total, unit) => total + unit.count, 0);
+			const diceRolls = rollDice(totalUnits);
+	
+			setGroupsAttacked(prev => {
+				const updatedSet = new Set(prev);
+				updatedSet.add(attackValue);
+				return updatedSet;
+			});
+	
+			console.log(`Rolling ${totalUnits} dice for attack group with attack value of ${attackValue}:`);
+			console.log("Dice Rolls:", diceRolls);
+		} else {
+			console.log(`No units available for attack value: ${attackValue}`);
+		}
+	}
+	
+
 	function takeCasualtyHits() {
 
 	}
@@ -112,17 +178,7 @@ export default function Home() {
 		}
 	}
 
-	function rollDice(numberOfDice: number): number[] {
-		const newDiceRolls = [];
 
-		for (let i = 0; i < numberOfDice; i++) {
-			const roll = Math.floor(Math.random() * 6) + 1;
-			newDiceRolls.push(roll)
-		}
-
-		setDiceRolls(newDiceRolls);
-		return newDiceRolls;
-	}
 
 	return (
 		<main className="">
@@ -242,7 +298,7 @@ export default function Home() {
 
 				<div className="flex justify-center mt-12">
 					<div>
-						<button className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice</button>
+						<button onClick={attack} className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice and Attack</button>
 					</div>
 				</div>
 			</div>
