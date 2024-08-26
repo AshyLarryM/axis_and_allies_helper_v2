@@ -32,10 +32,9 @@ export default function Home() {
 
 	const [diceRolls, setDiceRolls] = useState<number[]>([]);
 	const [hits, setHits] = useState<number>(0);
+	const [casualtyZone, setCasualtyZone] = useState<Unit[]>([]);
 
 	const [isOffensivePhase, setIsOffensivePhase] = useState<boolean>(true);
-	// const [isDefensivePhase, setIsDefensivePhase] = useState<boolean>(false);
-
 
 	function addUnit() {
 		const unit = newUnit(selectedUnit, count, position);
@@ -80,8 +79,6 @@ export default function Home() {
 			offensiveAttackGroups[unit.attack].push(unit);
 		})
 
-		console.log("Offensive AttackGroups: ", offensiveAttackGroups);
-
 		const defensiveDefenseGroups: Record<number, Unit[]> = {};
 
 		defensiveUnits.forEach(unit => {
@@ -90,9 +87,6 @@ export default function Home() {
 			}
 			defensiveDefenseGroups[unit.defense].push(unit);
 		});
-
-		console.log("Offensive Attack Groups: ", offensiveAttackGroups);
-		console.log("Defensive Group", defensiveDefenseGroups);
 
 		setOffensiveAttackGroups(offensiveAttackGroups);
 		setDefensiveDefenseGroups(defensiveDefenseGroups);
@@ -108,6 +102,41 @@ export default function Home() {
 
 		setDiceRolls(newDiceRolls);
 		return newDiceRolls;
+	}
+
+	function calculateTotalUnits(units: Record<number, Unit[]>): number {
+		return Object.values(units).reduce(
+			(total, unitArray) => total + unitArray.reduce((sum, unit) => sum + unit.count, 0),
+			0
+		);
+	}
+
+	function checkAndAutoAssignHits() {
+		const totalDefensiveUnits = calculateTotalUnits(defensiveDefenseGroups);
+
+		if (hits >= totalDefensiveUnits) {
+			console.log("Auto-assigning hits to defensive units since hits >= total defensive units");
+
+			// Automatically assign hits to all defensive units
+			const updatedDefenseGroups = { ...defensiveDefenseGroups };
+			const newCasualties: Unit[] = [];
+
+			Object.keys(updatedDefenseGroups).forEach((defenseValue) => {
+				const units = updatedDefenseGroups[Number(defenseValue)];
+
+				units.forEach((unit) => {
+					newCasualties.push(unit); // Move entire unit to casualties
+				});
+
+				updatedDefenseGroups[Number(defenseValue)] = []; // Remove all units from defense group
+			});
+
+			// Update the state
+			setDefensiveDefenseGroups(updatedDefenseGroups);
+			setCasualtyZone([...casualtyZone, ...newCasualties]);
+			setHits(0); // Reset the hits after applying
+			setIsOffensivePhase(false);
+		}
 	}
 
 	const attackedGroups: Set<number> = new Set();
@@ -135,13 +164,14 @@ export default function Home() {
 				if (availableAttackValues.length === 1) {
 					attackWithGroup(nextHighestAttackValue);
 					console.log("All attack groups have already attacked!");
+
+					checkAndAutoAssignHits();
+
 					setIsOffensivePhase(false);
 					setCurrentAttackValue(null);
+				}
 
-					// if (hits >= defensiveDefenseGroups.length) {
-
-					// }
-				} else {
+				else {
 					setCurrentAttackValue(nextHighestAttackValue);
 					attackWithGroup(nextHighestAttackValue);
 				}
@@ -179,9 +209,9 @@ export default function Home() {
 	}
 
 	function assignHitToUnit(attackValue: number, unitIndex: number) {
-		
+
 	}
-	
+
 
 
 	function assignHitsToCasualties() {
@@ -349,6 +379,11 @@ export default function Home() {
 				<div className="flex justify-center mt-16">
 					<div>
 						<h3 className="text-xl text-white font-semibold">Casualty Zone</h3>
+						<ul>
+							{casualtyZone.map((unit, index) => (
+								<li key={index} className="text-red-500">{`${unit.name} x ${unit.count}`}</li>
+							))}
+						</ul>
 					</div>
 				</div>
 			</div>
