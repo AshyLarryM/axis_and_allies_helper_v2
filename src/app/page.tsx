@@ -1,5 +1,6 @@
 'use client';
 import { newUnit } from "@/lib/units";
+import Image from "next/image";
 import { useState } from "react";
 
 type UnitName = "Infantry" | "Tank" | "Fighter" | "Bomber" | "Battleship" | "Submarine" | "Destroyer" | "Transport" | "Aircraft Carrier";
@@ -362,6 +363,22 @@ export default function Home() {
 							</div>
 						</div>
 					))}
+				</div>
+
+				<div className="flex justify-center mt-8">
+					<div className="flex space-x-4">
+						{diceRolls.map((roll, index) => (
+							<Image
+								key={index}
+								src={`/diceImages/dice-${roll}.svg`}
+								alt={`Dice ${roll}`}
+								height={72}
+								width={72}
+								className="bg-white rounded-sm"
+							/>
+						))}
+
+					</div>
 				</div>
 
 				<div className="flex justify-center mt-12">
