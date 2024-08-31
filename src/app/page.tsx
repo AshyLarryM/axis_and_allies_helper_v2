@@ -45,7 +45,7 @@ export default function Home() {
 			setIsOffensivePhase(false);  // Change the phase immediately
 		}
 	}, [hits, defensiveDefenseGroups, isOffensivePhase]);
-	
+
 
 
 	function addUnit() {
@@ -213,10 +213,10 @@ export default function Home() {
 
 
 			setHits(prevHits => {
-                const updatedHits = prevHits + newHits;
-                console.log("Updated hits: ", updatedHits);
-                return updatedHits;
-            });
+				const updatedHits = prevHits + newHits;
+				console.log("Updated hits: ", updatedHits);
+				return updatedHits;
+			});
 
 			setGroupsAttacked(prev => {
 				const updatedSet = new Set(prev);
@@ -233,10 +233,43 @@ export default function Home() {
 	}
 
 	function assignHitToUnit(attackValue: number, unitIndex: number) {
+		if (hits > 0) {
+			const updatedDefensiveGroups = { ...defensiveDefenseGroups };
+			const updatedCasualtyZone = [...casualtyZone];
 
+			// Get the specific unit
+			const unitToHit = updatedDefensiveGroups[attackValue][unitIndex];
+
+			if (unitToHit) {
+				unitToHit.count -= 1;
+
+				const casualtyIndex = updatedCasualtyZone.findIndex(unit => unit.name === unitToHit.name);
+				if (casualtyIndex !== -1) {
+					updatedCasualtyZone[casualtyIndex].count += 1;
+				} else {
+					updatedCasualtyZone.push({ ...unitToHit, count: 1 });
+				}
+
+				// Remove the unit from the defensive group if its count is zero
+				if (unitToHit.count === 0) {
+					updatedDefensiveGroups[attackValue].splice(unitIndex, 1);
+					// Remove the key from the object if no units left for that attack value
+					if (updatedDefensiveGroups[attackValue].length === 0) {
+						delete updatedDefensiveGroups[attackValue];
+					}
+				}
+
+				setDefensiveDefenseGroups(updatedDefensiveGroups);
+				setCasualtyZone(updatedCasualtyZone);
+				setHits(prevHits => prevHits - 1);
+
+				// Show success toast
+				toast.success(`${unitToHit.name} hit!`);
+			} else {
+				console.log("No unit to hit at this index and attack value");
+			}
+		}
 	}
-
-
 
 	function assignHitsToCasualties() {
 	}
@@ -384,6 +417,7 @@ export default function Home() {
 								) : (
 									<div className="text-gray-500">No units</div>
 								)}
+
 							</div>
 						</div>
 					))}
