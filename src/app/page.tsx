@@ -1,7 +1,8 @@
 'use client';
 import { newUnit } from "@/lib/units";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 type UnitName = "Infantry" | "Tank" | "Fighter" | "Bomber" | "Battleship" | "Submarine" | "Destroyer" | "Transport" | "Aircraft Carrier";
 type UnitType = "land" | "air" | "sea";
@@ -37,6 +38,16 @@ export default function Home() {
 
 	const [isOffensivePhase, setIsOffensivePhase] = useState<boolean>(true);
 
+	useEffect(() => {
+		const totalDefensiveUnits = calculateTotalUnits(defensiveDefenseGroups);
+		if (hits > 0 && hits >= totalDefensiveUnits && isOffensivePhase) {
+			checkAndAutoAssignHits();
+			setIsOffensivePhase(false);  // Change the phase immediately
+		}
+	}, [hits, defensiveDefenseGroups, isOffensivePhase]);
+	
+
+
 	function addUnit() {
 		const unit = newUnit(selectedUnit, count, position);
 
@@ -66,8 +77,9 @@ export default function Home() {
 	}
 
 	function sendToBattleStrip() {
-		if (!offensiveUnits.length || !defensiveUnits.length) {
+		if (!offensiveUnits.length || !defensiveUnits.length) { // check if offensive and defensive units exist
 			console.log('need to add units for offense and defense!');
+			toast.error("Must add units for Offense and Defense first!")
 			return;
 		}
 
@@ -132,11 +144,16 @@ export default function Home() {
 				updatedDefenseGroups[Number(defenseValue)] = []; // Remove all units from defense group
 			});
 
-			// Update the state
+			const casualtySummary = newCasualties.map(unit => `${unit.name} x ${unit.count}`).join(', ');
+			toast.success(`Units hit and auto-assigned to casualty zone: ${casualtySummary}`);
+
 			setDefensiveDefenseGroups(updatedDefenseGroups);
 			setCasualtyZone([...casualtyZone, ...newCasualties]);
 			setHits(0); // Reset the hits after applying
 			setIsOffensivePhase(false);
+
+			console.log("casualties: ", newCasualties);
+			toast.success(`Casualties:  ${newCasualties}`); // TODO: Not sure why not displaying.
 		}
 	}
 
@@ -153,7 +170,6 @@ export default function Home() {
 			setCurrentAttackValue(highestAttackValue);
 			attackWithGroup(highestAttackValue);
 		}
-
 		else {
 			const availableAttackValues = Object.keys(offensiveAttackGroups) // Find the next highest attack value group that hasn't attacked yet
 				.map(Number)
@@ -165,13 +181,13 @@ export default function Home() {
 				if (availableAttackValues.length === 1) {
 					attackWithGroup(nextHighestAttackValue);
 					console.log("All attack groups have already attacked!");
+					toast.success("All attack groups have already attacked!")
 
 					checkAndAutoAssignHits();
 
 					setIsOffensivePhase(false);
 					setCurrentAttackValue(null);
 				}
-
 				else {
 					setCurrentAttackValue(nextHighestAttackValue);
 					attackWithGroup(nextHighestAttackValue);
@@ -179,6 +195,7 @@ export default function Home() {
 			}
 		}
 	}
+
 
 	function attackWithGroup(attackValue: number) {
 		const attackGroup = offensiveAttackGroups[attackValue];
@@ -194,7 +211,12 @@ export default function Home() {
 				}
 			});
 
-			setHits(prevHits => prevHits + newHits);
+
+			setHits(prevHits => {
+                const updatedHits = prevHits + newHits;
+                console.log("Updated hits: ", updatedHits);
+                return updatedHits;
+            });
 
 			setGroupsAttacked(prev => {
 				const updatedSet = new Set(prev);
@@ -203,6 +225,7 @@ export default function Home() {
 			});
 
 			console.log(`Rolling ${totalUnits} dice for attack group with attack value of ${attackValue}:`);
+			toast.success(`Rolling ${totalUnits} dice for attack group with attack value of ${attackValue}: `);
 			console.log("Dice Rolls:", diceRolls);
 		} else {
 			console.log(`No units available for attack value: ${attackValue}`);
@@ -226,6 +249,7 @@ export default function Home() {
 		setGroupsAttacked(new Set());
 		setHits(0);
 		setIsOffensivePhase(true);
+		setCasualtyZone([]);
 
 		console.log("cleared state")
 	}
@@ -325,7 +349,7 @@ export default function Home() {
 							))}
 						</ul>
 					</div>
-					<div className="mt-4 text-white text-xl">
+					<div className="text-white text-xl">
 						<h2>Total Hits: {hits}</h2>
 					</div>
 				</div>
@@ -395,10 +419,10 @@ export default function Home() {
 
 				<div className="flex justify-center mt-16">
 					<div>
-						<h3 className="text-xl text-white font-semibold">Casualty Zone</h3>
+						<h3 className="text-3xl text-white font-semibold">Casualty Zone</h3>
 						<ul>
 							{casualtyZone.map((unit, index) => (
-								<li key={index} className="text-red-500">{`${unit.name} x ${unit.count}`}</li>
+								<li key={index} className="text-xl text-red-500">{`${unit.name} x ${unit.count}`}</li>
 							))}
 						</ul>
 					</div>
