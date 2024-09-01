@@ -24,7 +24,7 @@ export default function Home() {
 	const [groupsAttacked, setGroupsAttacked] = useState<Set<number>>(new Set());
 	const [groupsDefended, setGroupsDefended] = useState<Set<number>>(new Set());
 	const [currentAttackValue, setCurrentAttackValue] = useState<number | null>(null);
-	const [currentDefendValue, setCurrentDefendValue] = useState<number | null>(null);
+	const [currentDefenseValue, setCurrentDefenseValue] = useState<number | null>(null);
 
 	const [selectedUnit, setSelectedUnit] = useState<UnitName>("Infantry");
 	const [position, setPosition] = useState<Position>("offensive");
@@ -39,6 +39,7 @@ export default function Home() {
 	const [casualtyZone, setCasualtyZone] = useState<Unit[]>([]);
 
 	const [isOffensivePhase, setIsOffensivePhase] = useState<boolean>(true);
+	const [isDefensivePhase, setIsDefensivePhase] = useState<boolean>(false);
 
 	useEffect(() => {
 		const totalDefensiveUnits = calculateTotalUnits(defensiveDefenseGroups);
@@ -271,19 +272,126 @@ export default function Home() {
 		}
 	}
 
-	const defendedGroups: Set<number> = new Set();
-
 	function defend() {
-		console.log("defensive units", defensiveUnits);
-		if (hits !== 0) {
-			toast.error("Assign hits before defending!")
-		}
-
-		if (!Object.keys(defensiveDefenseGroups).length) {
-			console.log("No Defensive Units available for attack");
+		console.log("Defensive Units:", defensiveUnits);
+		console.log("Casualty Zone:", casualtyZone);
+		
+		if (hits !== 0 && !isDefensivePhase) {
+			toast.error("Assign hits before defending!");
 			return;
 		}
+	
+		if (!Object.keys(defensiveDefenseGroups).length && !casualtyZone.length) {
+			console.log("No Defensive Units OR Casualties available for defense");
+			console.log("Defensive Defense Groups:", defensiveDefenseGroups, "Casualty Zone:", casualtyZone);
+			toast.error("No Defensive Units OR Casualties available for defense");
+			return;
+		}
+	
+		// Combine defense values from defensiveDefenseGroups and casualtyZone into one variable
+		const combinedDefenseGroups: Record<number, Unit[]> = {};
+	
+		// Add units from defensiveDefenseGroups
+		Object.keys(defensiveDefenseGroups).forEach(defenseValue => {
+			const defenseIntValue = Number(defenseValue);
+			combinedDefenseGroups[defenseIntValue] = defensiveDefenseGroups[defenseIntValue] || [];
+		});
+	
+		// Add units from casualtyZone, grouping them by defense value
+		casualtyZone.forEach(casualtyUnit => {
+			const defenseValue = casualtyUnit.defense;
+			if (!combinedDefenseGroups[defenseValue]) {
+				combinedDefenseGroups[defenseValue] = [];
+			}
+			combinedDefenseGroups[defenseValue].push(casualtyUnit);
+		});
+	
+		if (currentDefenseValue === null) {
+			setIsDefensivePhase(true);
+	
+			// Determine the highest defense value from the combined groups
+			const allDefenseValues = Object.keys(combinedDefenseGroups).map(Number);
+	
+			// Log the gathered defense values
+			console.log("All Defense Values:", allDefenseValues);
+	
+			if (allDefenseValues.length > 0) {
+				const highestDefenseValue = Math.max(...allDefenseValues);
+				console.log("Setting Highest Defense Value:", highestDefenseValue);
+				setCurrentDefenseValue(highestDefenseValue);
+				rollForDefenseGroup(highestDefenseValue);
+			} else {
+				console.log("No valid defense values found.");
+				toast.error("No valid defense values found.");
+			}
+		} else {
+			// Continue with the next group
+			const remainingDefenseValues = Object.keys(combinedDefenseGroups)
+				.map(Number)
+				.filter(defenseValue => defenseValue < currentDefenseValue);
+	
+			if (remainingDefenseValues.length > 0) {
+				const nextDefenseValue = Math.max(...remainingDefenseValues);
+				console.log("Setting Next Defense Value:", nextDefenseValue);
+				setCurrentDefenseValue(nextDefenseValue);
+				rollForDefenseGroup(nextDefenseValue);
+			} else {
+				console.log("All defensive groups have rolled their dice.");
+				toast.success("All defensive groups have rolled their dice.");
+				setIsDefensivePhase(false);
+				setCurrentDefenseValue(null); // Reset for the next round
+			}
+		}
 	}
+	
+	
+	function rollForDefenseGroup(defenseValue: number) {
+		const allDefensiveUnits: Unit[] = [];
+	
+		// Collect all units from the specific defense group, if they exist
+		if (defensiveDefenseGroups[defenseValue]) {
+			defensiveDefenseGroups[defenseValue].forEach(unit => {
+				for (let i = 0; i < unit.count; i++) {
+					allDefensiveUnits.push(unit);
+				}
+			});
+		}
+	
+		// Include units from casualtyZone with the same defense value
+		const casualtyUnits: Unit[] = [];
+		casualtyZone.forEach(unit => {
+			if (unit.defense === defenseValue) {
+				for (let i = 0; i < unit.count; i++) {
+					casualtyUnits.push(unit);
+				}
+			}
+		});
+	
+		// Temporarily combine casualty units with defense group for rolling
+		const combinedUnits = [...allDefensiveUnits, ...casualtyUnits];
+	
+		if (combinedUnits.length === 0) {
+			toast.error("No units to roll for in this defense group.");
+			return;
+		}
+	
+		const diceRolls = rollDice(combinedUnits.length);
+	
+		let defensiveHits = 0;
+	
+		diceRolls.forEach((roll, index) => {
+			const unit = combinedUnits[index];
+			if (roll <= unit.defense) {
+				defensiveHits++;
+			}
+		});
+	
+		// After rolling, casualty units are still in the casualty zone, but their defense has been used
+		setHits(prevHits => prevHits + defensiveHits);
+		console.log(`Defensive group with defense value ${defenseValue} scored ${defensiveHits} hits.`);
+		toast.success(`Defensive group with defense value ${defenseValue} scored ${defensiveHits} hits.`);
+	}
+	
 
 	function clearUnits() {
 		setDefensiveUnits([]);
