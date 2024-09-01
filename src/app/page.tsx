@@ -22,7 +22,9 @@ export default function Home() {
 	const [defensiveUnits, setDefensiveUnits] = useState<Unit[]>([]);
 
 	const [groupsAttacked, setGroupsAttacked] = useState<Set<number>>(new Set());
+	const [groupsDefended, setGroupsDefended] = useState<Set<number>>(new Set());
 	const [currentAttackValue, setCurrentAttackValue] = useState<number | null>(null);
+	const [currentDefendValue, setCurrentDefendValue] = useState<number | null>(null);
 
 	const [selectedUnit, setSelectedUnit] = useState<UnitName>("Infantry");
 	const [position, setPosition] = useState<Position>("offensive");
@@ -211,7 +213,6 @@ export default function Home() {
 				}
 			});
 
-
 			setHits(prevHits => {
 				const updatedHits = prevHits + newHits;
 				console.log("Updated hits: ", updatedHits);
@@ -263,7 +264,6 @@ export default function Home() {
 				setCasualtyZone(updatedCasualtyZone);
 				setHits(prevHits => prevHits - 1);
 
-				// Show success toast
 				toast.success(`${unitToHit.name} hit!`);
 			} else {
 				console.log("No unit to hit at this index and attack value");
@@ -271,7 +271,18 @@ export default function Home() {
 		}
 	}
 
-	function assignHitsToCasualties() {
+	const defendedGroups: Set<number> = new Set();
+
+	function defend() {
+		console.log("defensive units", defensiveUnits);
+		if (hits !== 0) {
+			toast.error("Assign hits before defending!")
+		}
+
+		if (!Object.keys(defensiveDefenseGroups).length) {
+			console.log("No Defensive Units available for attack");
+			return;
+		}
 	}
 
 	function clearUnits() {
@@ -444,8 +455,8 @@ export default function Home() {
 						{isOffensivePhase ? (
 							<button onClick={attack} className="text-white text-xl bg-orange-700 px-4 py-2 rounded-md">Roll Dice and Attack</button>
 						) : (
-							<button onClick={assignHitsToCasualties} className="text-white text-xl bg-red-700 px-4 py-2 rounded-md">
-								Assign Hits to Casualties
+							<button onClick={defend} className="text-white text-xl bg-red-700 px-4 py-2 rounded-md">
+								Roll Dice To Defend
 							</button>
 						)}
 					</div>
