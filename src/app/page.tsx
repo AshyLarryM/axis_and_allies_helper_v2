@@ -214,7 +214,7 @@ export default function Home() {
 				}
 			});
 
-			setHits(prevHits => {
+			setHits(prevHits => { // TODO: Rendering 2x
 				const updatedHits = prevHits + newHits;
 				console.log("Updated hits: ", updatedHits);
 				return updatedHits;
@@ -272,23 +272,44 @@ export default function Home() {
 		}
 	}
 
+	function assignHitToOffensiveUnit(attackValue: number, unitIndex: number) { // TODO: Check through this function.
+    if (hits > 0) {
+        const updatedOffensiveGroups = { ...offensiveAttackGroups };
+        const unitToHit = updatedOffensiveGroups[attackValue][unitIndex];
+
+        if (unitToHit) {
+            unitToHit.count -= 1;
+
+            // Handle logic if the unit count goes to zero, e.g., moving to a casualty zone
+            if (unitToHit.count === 0) {
+                updatedOffensiveGroups[attackValue].splice(unitIndex, 1);
+                if (updatedOffensiveGroups[attackValue].length === 0) {
+                    delete updatedOffensiveGroups[attackValue];
+                }
+            }
+
+            setOffensiveAttackGroups(updatedOffensiveGroups);
+            setHits(prevHits => prevHits - 1);
+
+            toast.success(`${unitToHit.name} hit!`);
+        }
+    }
+}
+
+
 	function defend() {
-		console.log("Defensive Units:", defensiveUnits);
-		console.log("Casualty Zone:", casualtyZone);
-		
-		if (hits !== 0 && !isDefensivePhase) {
+
+		if (hits !== 0 && !isDefensivePhase) { 
 			toast.error("Assign hits before defending!");
 			return;
 		}
 	
 		if (!Object.keys(defensiveDefenseGroups).length && !casualtyZone.length) {
-			console.log("No Defensive Units OR Casualties available for defense");
-			console.log("Defensive Defense Groups:", defensiveDefenseGroups, "Casualty Zone:", casualtyZone);
 			toast.error("No Defensive Units OR Casualties available for defense");
 			return;
 		}
 	
-		// Combine defense values from defensiveDefenseGroups and casualtyZone into one variable
+		// Combine defense values from defensiveDefenseGroups and casualtyZone into a dictionary.
 		const combinedDefenseGroups: Record<number, Unit[]> = {};
 	
 		// Add units from defensiveDefenseGroups
