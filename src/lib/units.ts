@@ -1,14 +1,14 @@
-type UnitName = "Infantry" | "Tank" | "Fighter" | "Bomber" | "Battleship" | "Submarine" | "Destroyer" | "Transport" | "Aircraft Carrier";
-type UnitType = "land" | "air" | "sea";
-type Position = "offensive" | "defensive";
+export type UnitName = "Infantry" | "Tank" | "Fighter" | "Bomber" | "Battleship" | "Submarine" | "Destroyer" | "Transport" | "Aircraft Carrier";
+export type UnitType = "land" | "air" | "sea";
+export type Position = "offensive" | "defensive";
 
-interface Unit {
-	name: UnitName,
-	category: UnitType
-	attack: number,
-	defense: number,
-	count: number,
-	position: Position,
+export interface Unit {
+    name: UnitName,
+    attack: number,
+    defense: number,
+    count: number,
+    category: UnitType
+    position: Position,
 }
 
 export function newUnit(name: UnitName, count: number, position: Position): Unit {
@@ -32,6 +32,19 @@ export function newUnit(name: UnitName, count: number, position: Position): Unit
         case "Battleship":
             return { name, attack: 4, defense: 4, count, category: "sea", position };
         default:
-            return { name: "Infantry", attack: 1, defense: 2, count, category: "land", position }; // default to Infantry
+            return { name: "Infantry", attack: 1, defense: 2, count, category: "land", position };
     }
 }
+
+export function updateUnits(units: Unit[], newUnit: Unit, setUnits: React.Dispatch<React.SetStateAction<Unit[]>>) {
+    const existingUnitIndex = units.findIndex(u => u.name === newUnit.name);
+
+    if (existingUnitIndex !== -1) {
+        const updatedUnits = units.map((u, index) =>
+            index === existingUnitIndex ? { ...u, count: u.count + newUnit.count} : u
+        );
+        setUnits(updatedUnits)
+    } else {
+        setUnits([...units, newUnit]);
+    }
+};
