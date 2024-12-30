@@ -41,10 +41,24 @@ export function updateUnits(units: Unit[], newUnit: Unit, setUnits: React.Dispat
 
     if (existingUnitIndex !== -1) {
         const updatedUnits = units.map((u, index) =>
-            index === existingUnitIndex ? { ...u, count: u.count + newUnit.count} : u
+            index === existingUnitIndex ? { ...u, count: u.count + newUnit.count } : u
         );
         setUnits(updatedUnits)
     } else {
         setUnits([...units, newUnit]);
     }
 };
+
+export function groupUnitsByAttribute(units: Unit[], attribute: "attack" | "defense"): Record<number, Unit[]> {
+    return units.reduce((groups, unit) => {
+        const key = unit[attribute];
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        groups[key].push(unit);
+        console.log("Groups: ", groups, units);
+        return groups;
+    }, {} as Record<number, Unit[]>)
+
+}
+
