@@ -27,13 +27,16 @@ export default function Home() {
 	}
 
 	function sendToBattleZone() {
-		const groupedByAttack = groupUnitsByAttribute(offensiveUnits, "attack")
-		const groupedByDefense = groupUnitsByAttribute(offensiveUnits, "defense")
+		if (offensiveUnits.length === 0 || defensiveUnits.length === 0) {
+			console.log("add units for battle.")
+			return;
+		}
+
+		const groupedByAttack = groupUnitsByAttribute(offensiveUnits, "attack");
+		const groupedByDefense = groupUnitsByAttribute(defensiveUnits, "defense");
 
 		setGroupedOffensiveUnits(groupedByAttack);
 		setGroupedDefensiveUnits(groupedByDefense);
-		console.log("Attacking: ", groupedOffensiveUnits),
-			console.log("Defending: ", groupedDefensiveUnits);
 	}
 
 	return (
@@ -59,7 +62,7 @@ export default function Home() {
 					<button onClick={sendToBattleZone} className="py-4 px-4 bg-green-500 rounded-full font-semibold">Send To BattleZone</button>
 				</div>
 				<div className="flex justify-center mt-6">
-					<BattleZone offensiveUnits={offensiveUnits} defensiveUnits={defensiveUnits} />
+					<BattleZone offensiveUnits={groupedOffensiveUnits} defensiveUnits={groupedDefensiveUnits} />
 				</div>
 			</div>
 		</main>

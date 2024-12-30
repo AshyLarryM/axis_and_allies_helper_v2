@@ -11,6 +11,8 @@ export interface Unit {
     position: Position,
 }
 
+export type GroupedUnitsByRole = Record<number, Unit[]>;
+
 export function newUnit(name: UnitName, count: number, position: Position): Unit {
     switch (name) {
         case "Infantry":
