@@ -6,7 +6,6 @@ import { UnitList } from "./components/units/UnitList";
 import { BattleZone } from "./components/battlezone/BattleZone";
 
 export default function Home() {
-
 	const [offensiveUnits, setOffensiveUnits] = useState<Unit[]>([]);
 	const [defensiveUnits, setDefensiveUnits] = useState<Unit[]>([]);
 
@@ -40,7 +39,7 @@ export default function Home() {
 	}
 
 	return (
-		<main className="">
+		<main className="p-4">
 			<div className="mt-16">
 				<h1 className="text-2xl text-center text-slate-200">Choose Units for Battle</h1>
 				<CreateUnit
