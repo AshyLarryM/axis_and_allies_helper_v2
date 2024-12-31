@@ -16,6 +16,8 @@ export default function Home() {
 	const [groupedOffensiveUnits, setGroupedOffensiveUnits] = useState<Record<number, Unit[]>>({});
 	const [groupedDefensiveUnits, setGroupedDefensiveUnits] = useState<Record<number, Unit[]>>({});
 
+	const [battleZoneVisible, setBattleZoneVisible] = useState<boolean>(false);
+
 	function addUnit() {
 		const newUnitInstance = newUnit(selectedUnit, unitCount, position);
 		if (position === "offensive") {
@@ -36,11 +38,13 @@ export default function Home() {
 
 		setGroupedOffensiveUnits(groupedByAttack);
 		setGroupedDefensiveUnits(groupedByDefense);
+
+		setBattleZoneVisible(true);
 	}
 
 	return (
 		<main className="p-4">
-			<div className="mt-16">
+			<div className="mt-8">
 				<h1 className="text-2xl text-center text-slate-200">Choose Units for Battle</h1>
 				<CreateUnit
 					position={position}
@@ -51,18 +55,30 @@ export default function Home() {
 					setUnitCount={setUnitCount}
 					addUnit={addUnit}
 				/>
-				<div className="flex justify-center mt-6">
+				{(defensiveUnits.length > 0 || offensiveUnits.length > 0) && (
+					<>
+						<div className="flex justify-center mt-6">
+							<div className="flex justify-center mt-6">
+								<UnitList title="Offensive Units" units={offensiveUnits} color="red" />
+								<UnitList title="Defensive Units" units={defensiveUnits} color="blue" />
+							</div>
+						</div>
+
+						{offensiveUnits.length > 0 && defensiveUnits.length > 0 && (
+							<div className="flex justify-center my-6">
+								<button onClick={sendToBattleZone} className="py-3 px-3 bg-green-500 rounded-full font-semibold">Send To BattleZone</button>
+							</div>
+						)}
+					</>
+				)}
+
+				{battleZoneVisible && (
 					<div className="flex justify-center mt-6">
-						<UnitList title="Offensive Units" units={offensiveUnits} color="red" />
-						<UnitList title="Defensive Units" units={defensiveUnits} color="blue" />
+						<BattleZone
+							offensiveUnits={groupedOffensiveUnits}
+							defensiveUnits={groupedDefensiveUnits} />
 					</div>
-				</div>
-				<div className="flex justify-center my-6">
-					<button onClick={sendToBattleZone} className="py-4 px-4 bg-green-500 rounded-full font-semibold">Send To BattleZone</button>
-				</div>
-				<div className="flex justify-center mt-6">
-					<BattleZone offensiveUnits={groupedOffensiveUnits} defensiveUnits={groupedDefensiveUnits} />
-				</div>
+				)}
 			</div>
 		</main>
 	);
